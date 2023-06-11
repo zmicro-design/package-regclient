@@ -6,14 +6,17 @@ import "$ZMICRO_PACKAGES_PATH/$PACKAGE_NAME/core"
 
 help() {
   echo "Usage:"
-  echo "  zmicro regclient <args ...>"
+  echo "  zmicro regclient <command> <args ...>"
   echo ""
 
-  regclient --help
+  echo "Commands:"
+  echo "  regctl <args ...>"
+  echo "  regbot <args ...>"
+  echo "  regsync <args ...>"
 }
 
 version() {
-  regclient --version
+  regctl --version
 }
 
 core() {
@@ -26,14 +29,14 @@ core() {
   # context directory
 
   case $1 in
-  -h | --help | help)
+  -h | --help | help | "")
     help
     ;;
   -v | --version | version)
     version
     ;;
   *)
-    regclient "$@"
+    eval "$@"
     ;;
   esac
 }

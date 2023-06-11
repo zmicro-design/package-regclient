@@ -25,46 +25,72 @@ install() {
   # PACKAGE_CORE_VERSION=$latest_version
   # log::success "[$(timestamp)][package][$name] latest version: $PACKAGE_CORE_VERSION"
 
-  # files
-  local tmp_file="$name"
-  local source_bin_file="./$tmp_file"
+  # prepare context
+  cd $tmp_dir
+
   # reference: https://github.com/9seconds/mtg/releases
   # example:
   #   https://github.com/regclient/regclient/releases/download/v0.4.8/regbot-darwin-amd64
   #   https://github.com/regclient/regclient/releases/download/v0.4.8/regbot-darwin-arm64
   #   https://github.com/regclient/regclient/releases/download/v0.4.8/regbot-linux-amd64
   #   https://github.com/regclient/regclient/releases/download/v0.4.8/regbot-linux-arm64
-  # generate url
-  local url="${PACKAGE_CORE_RELEASE_DOWNLOAD}/$PACKAGE_CORE_VERSION/${name}-${platform}-${arch}"
-  log::debug "[$(timestamp)][package][$name][$kernel][$arch] url: $url, file: ${tmp_file}, tmp_dir: $tmp_dir"
+  #
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regctl-darwin-amd64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regctl-darwin-arm64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regctl-linux-amd64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regctl-linux-arm64
+  #
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regsync-darwin-amd64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regsync-darwin-arm64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regsync-linux-amd64
+  #   https://github.com/regclient/regclient/releases/download/v0.4.8/regsync-linux-arm64
 
   log::info "[$(timestamp)][package][$name] os: $os"
   log::info "[$(timestamp)][package][$name] arch: $arch"
   log::info "[$(timestamp)][package][$name] kernel: $kernel"
   log::info "[$(timestamp)][package][$name] platform: $platform"
   log::info "[$(timestamp)][package][$name] usr_bin_dir: $usr_bin_dir"
-  log::info "[$(timestamp)][package][$name] source_bin_file: $source_bin_file"
-  log::info "[$(timestamp)][package][$name] url: $url"
-  log::info "[$(timestamp)][package][$name] tmp_dir: $tmp_dir"
-  log::info "[$(timestamp)][package][$name] tmp_file: $tmp_file"
-  if [ -n "$PLUGIN_PACKAGE_INSTALL_MODE" ]; then
-    log::info "[$(timestamp)][package][$name] mode: $PLUGIN_PACKAGE_INSTALL_MODE"
-  fi
 
-  # prepare context
-  cd $tmp_dir
+  download() {
+    local name=$1
 
-  # download
-  log::info "[$(timestamp)][package][$name] downloading ..."
-  os::download $tmp_file $url
-  if [ "$?" != "0" ]; then
-    log::error "[$(timestamp)][package][$name] failed to download from $url ."
-    return 1
-  fi
+    # files
+    local tmp_file="$name"
+    local source_bin_file="./$tmp_file"
+    # generate url
+    local url="${PACKAGE_CORE_RELEASE_DOWNLOAD}/$PACKAGE_CORE_VERSION/${name}-${platform}-${arch}"
+    log::debug "[$(timestamp)][package][$name][$kernel][$arch] url: $url, file: ${tmp_file}, tmp_dir: $tmp_dir"
 
-  # install
-  log::info "[$(timestamp)][package][$name] installing ..."
-  os::install $source_bin_file $usr_bin_dir $name
+    log::info "[$(timestamp)][package][$name] source_bin_file: $source_bin_file"
+    log::info "[$(timestamp)][package][$name] url: $url"
+    log::info "[$(timestamp)][package][$name] tmp_dir: $tmp_dir"
+    log::info "[$(timestamp)][package][$name] tmp_file: $tmp_file"
+    if [ -n "$PLUGIN_PACKAGE_INSTALL_MODE" ]; then
+      log::info "[$(timestamp)][package][$name] mode: $PLUGIN_PACKAGE_INSTALL_MODE"
+    fi
+
+    # download
+    log::info "[$(timestamp)][package][$name] downloading ..."
+    os::download $tmp_file $url
+    if [ "$?" != "0" ]; then
+      log::error "[$(timestamp)][package][$name] failed to download from $url ."
+      return 1
+    fi
+
+    # install
+    log::info "[$(timestamp)][package][$name] installing ..."
+    os::install $source_bin_file $usr_bin_dir $name
+  }
+
+  local names=(
+    regctl
+    regsync
+    regbot
+  )
+
+  for name in ${names[@]}; do
+    download $name
+  done
 
   if [ "$PLUGIN_PACKAGE_INSTALL_MODE" != "test" ]; then
     # clean
